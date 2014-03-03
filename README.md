@@ -1,7 +1,3 @@
-# *NOTICE!!*
-
-## It still doesn't work with newest version :P
-
 # Installation
 
 ```
