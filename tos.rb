@@ -35,13 +35,17 @@ class Tos
   end
 
   def page_post(url)
+    encypt = Checksum.new
     show_wait_spinner{
       res_json = nil
       loop do
         full_url = "#{@tos_url}#{url}"
         post_data = {
-          "frags" => Digest::MD5.hexdigest(Digest::MD5.hexdigest(full_url)),
-          "attempt" => "1"
+          "frags" => eval(Base64.decode64(encypt.secret['get_frags'])),
+          "attempt" => "1",
+          "tvalid" => "FALSE",
+          "ness" => eval(Base64.decode64(encypt.secret['get_ness'])),
+          "afe" => eval(Base64.decode64(encypt.secret['get_afe']))
         }
         if full_url.include? 'complete'
           post_data = post_data.merge(@floor.ext_acs_data)
@@ -70,6 +74,9 @@ class Tos
     puts '登入遊戲中.....'
     res_json = page_post(@user.get_login_url)
     puts '登入成功'
+    match_string = '你已累積登入 <color=#FFFF80FF>(\d*)</color> 天'
+    login_days = /#{match_string}/.match(res_json['data']['dailyMessage'])[1].to_i
+    puts "你已累積登入 #{login_days} 天"
     puts '取得資料'
     @user.data = res_json['user']
     @user.bookmarks = res_json['user']['bookmarks']
@@ -118,6 +125,7 @@ class Tos
     return false if choice_zone == 'b'
     choice_zone = @last_zone if @last_zone and choice_zone == ''
     @last_zone = choice_zone
+    @floor.wave_zone = choice_zone
 
     puts "Stage list"
     last_stage = nil
@@ -148,6 +156,7 @@ class Tos
     exit if choice_stage == 'q'
     return false if choice_stage == 'b'
     choice_stage = last_stage if last_stage and choice_stage == ''
+    @floor.wave_stage = choice_stage
 
     puts "Floor list#{@last_zone.to_i == 9 ? "(key:#{@user.data['items']['13']}/100)" : ""}"
     last_floor = nil
